@@ -28,11 +28,23 @@ main (int argc, char** argv)
 {
 	GError* error = NULL;
 	gchar* out = NULL;
+
+	GOptionContext* context = g_option_context_new ("");
+	if (!g_option_context_parse (context, &argc, &argv, &error)) {
+		if (error) {
+			g_printerr ("%s\n", error->message);
+			g_error_free (error);
+		}
+		g_option_context_free (context);
+		return 1;
+	}
+	g_option_context_free (context);
+
 	if (!g_spawn_command_line_sync ("git-rev-list --all --parents", &out, NULL, NULL, &error)) {
 		if (error) {
 			g_printerr ("%s", error->message);
 		}
-		return 1;
+		return 2;
 	}
 
 	gchar**lines = g_strsplit (out, "\n", 0);
