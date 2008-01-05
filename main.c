@@ -36,9 +36,29 @@ main (int argc, char** argv)
 	}
 
 	gchar**lines = g_strsplit (out, "\n", 0);
+	gchar**line;
 	g_free (out);
 
-	g_strfreev (lines);
+	g_print ("digraph {\n");
+
+	for (line = lines; line && *line && **line; line++) {
+		gchar** revs = g_strsplit (*line, " ", 0);
+		gchar**parent;
+		g_free (*line);
+		*line = NULL;
+
+		for (parent = revs+1; parent && *parent; parent++) {
+			g_print ("r%s -> r%s;\n",
+				 *parent,
+				 revs[0]);
+		}
+
+		g_strfreev (revs);
+	}
+
+	g_print ("}\n");
+
+	g_free (lines);
 	return 0;
 }
 
