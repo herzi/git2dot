@@ -25,6 +25,6 @@
 
 tmpfile=`mktemp`
 
-./git2dot | dot -Tpng -o"$tmpfile"
+./git2dot $@ | dot -Tpng -o"$tmpfile"
 eog "$tmpfile"
 
