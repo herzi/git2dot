@@ -21,9 +21,24 @@
  * USA
  */
 
+#include <glib.h>
+
 int
 main (int argc, char** argv)
 {
+	GError* error = NULL;
+	gchar* out = NULL;
+	if (!g_spawn_command_line_sync ("git-rev-list --all --parents", &out, NULL, NULL, &error)) {
+		if (error) {
+			g_printerr ("%s", error->message);
+		}
+		return 1;
+	}
+
+	gchar**lines = g_strsplit (out, "\n", 0);
+	g_free (out);
+
+	g_strfreev (lines);
 	return 0;
 }
 
