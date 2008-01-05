@@ -29,7 +29,18 @@ main (int argc, char** argv)
 	GError* error = NULL;
 	gchar* out = NULL;
 
+	gboolean show_all = TRUE;
+	GString* command_line;
+
+	GOptionEntry entries[] = {
+		{"all", '\0', 0, G_OPTION_ARG_NONE, &show_all,
+		 "Pretend as if all the refs in $GIT_DIR/refs/ are listed on "
+		 "the command line as <commit>. (Default)", NULL},
+		{NULL}
+	};
+
 	GOptionContext* context = g_option_context_new ("");
+	g_option_context_add_main_entries (context, entries, NULL);
 	if (!g_option_context_parse (context, &argc, &argv, &error)) {
 		if (error) {
 			g_printerr ("%s\n", error->message);
@@ -40,12 +51,20 @@ main (int argc, char** argv)
 	}
 	g_option_context_free (context);
 
-	if (!g_spawn_command_line_sync ("git-rev-list --all --parents", &out, NULL, NULL, &error)) {
+	command_line = g_string_new ("git-rev-list --parents");
+	if (show_all) {
+		g_string_append (command_line, " --all");
+	}
+
+	if (!g_spawn_command_line_sync (command_line->str, &out, NULL, NULL, &error)) {
+		g_string_free (command_line, TRUE);
 		if (error) {
 			g_printerr ("%s", error->message);
+			g_error_free (error);
 		}
 		return 2;
 	}
+	g_string_free (command_line, TRUE);
 
 	gchar**lines = g_strsplit (out, "\n", 0);
 	gchar**line;
