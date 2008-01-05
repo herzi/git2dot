@@ -29,17 +29,21 @@ main (int argc, char** argv)
 	GError* error = NULL;
 	gchar* out = NULL;
 
-	gboolean show_all = TRUE;
+	gboolean  show_all = FALSE;
+	gchar   **commits  = NULL;
+	gchar   **commit;
 	GString* command_line;
 
 	GOptionEntry entries[] = {
 		{"all", '\0', 0, G_OPTION_ARG_NONE, &show_all,
 		 "Pretend as if all the refs in $GIT_DIR/refs/ are listed on "
 		 "the command line as <commit>. (Default)", NULL},
+		{G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_STRING_ARRAY, &commits,
+		 "Commits to include in the graph."},
 		{NULL}
 	};
 
-	GOptionContext* context = g_option_context_new ("");
+	GOptionContext* context = g_option_context_new ("COMMITS");
 	g_option_context_add_main_entries (context, entries, NULL);
 	if (!g_option_context_parse (context, &argc, &argv, &error)) {
 		if (error) {
@@ -51,10 +55,20 @@ main (int argc, char** argv)
 	}
 	g_option_context_free (context);
 
+	if (!commits && !show_all) {
+		/* no commit given, show all */
+		show_all = TRUE;
+	}
+
 	command_line = g_string_new ("git-rev-list --parents");
 	if (show_all) {
 		g_string_append (command_line, " --all");
 	}
+	for (commit = commits; commit && *commit; commit++) {
+		// FIXME: shell-escape?
+		g_string_append_printf (command_line, " %s", *commit);
+	}
+	g_strfreev (commits);
 
 	if (!g_spawn_command_line_sync (command_line->str, &out, NULL, NULL, &error)) {
 		g_string_free (command_line, TRUE);
@@ -70,6 +84,7 @@ main (int argc, char** argv)
 	gchar**line;
 	g_free (out);
 
+	// FIXME: detect git-dir and provide a nice graph name
 	g_print ("digraph {\n");
 
 	for (line = lines; line && *line && **line; line++) {
