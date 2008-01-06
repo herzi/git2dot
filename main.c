@@ -66,6 +66,7 @@ main (int argc, char** argv)
 	}
 	for (commit = commits; commit && *commit; commit++) {
 		// FIXME: shell-escape?
+		// FIXME: pretty-print the tip commits in the tree
 		g_string_append_printf (command_line, " %s", *commit);
 	}
 	g_strfreev (commits);
