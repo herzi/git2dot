@@ -33,6 +33,9 @@ main (int argc, char** argv)
 	gchar   **commits  = NULL;
 	gchar   **commit;
 	GString* command_line;
+	GHashTable *revset = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    GHashTableIter iter;
+    char *key, *value;
 
 	GOptionEntry entries[] = {
 		{"all", '\0', 0, G_OPTION_ARG_NONE, &show_all,
@@ -60,7 +63,7 @@ main (int argc, char** argv)
 		show_all = TRUE;
 	}
 
-	command_line = g_string_new ("git-rev-list --parents");
+	command_line = g_string_new ("git rev-list --parents");
 	if (show_all) {
 		g_string_append (command_line, " --all");
 	}
@@ -99,10 +102,29 @@ main (int argc, char** argv)
 			g_print ("r%s -> r%s;\n",
 				 *parent,
 				 revs[0]);
+            g_hash_table_insert(revset, g_strdup(*parent), NULL);
 		}
+        g_hash_table_insert(revset, g_strdup(revs[0]), NULL);
 
 		g_strfreev (revs);
 	}
+
+    // print all of the nodes
+    g_hash_table_iter_init(&iter, revset);
+    while (g_hash_table_iter_next (&iter, (void **)&key, (void **)&value)) {
+        gchar *command = g_strdup_printf("git log -1 --pretty=%%s %s", key);
+
+        if (!g_spawn_command_line_sync (command, &out, NULL, NULL, &error)) {
+            g_string_free (command_line, TRUE);
+            if (error) {
+                g_printerr ("%s", error->message);
+                g_error_free (error);
+            }
+            return 2;
+        }
+        g_strchomp(out);
+        g_print("r%s [label=\"%.8s\", labeltooltip=\"%s\"];\n", key, key, out);
+    }
 
 	g_print ("}\n");
 
