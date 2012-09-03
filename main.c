@@ -60,7 +60,7 @@ main (int argc, char** argv)
 		show_all = TRUE;
 	}
 
-	command_line = g_string_new ("git-rev-list --parents");
+	command_line = g_string_new ("git rev-list --parents");
 	if (show_all) {
 		g_string_append (command_line, " --all");
 	}
